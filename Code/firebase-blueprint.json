@@ -1,0 +1,236 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User account and profile with role-based permissions",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string", "maxLength": 30 },
+        "role": { "type": "string", "enum": ["hall_admin", "farm_owner", "super_admin"] },
+        "approvalStatus": { "type": "string", "enum": ["pending", "approved", "suspended"] },
+        "hallId": { "type": "string" },
+        "farmId": { "type": "string" },
+        "institution": { "type": "string", "maxLength": 120 },
+        "designation": { "type": "string", "maxLength": 100 },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["name", "email", "role", "approvalStatus"]
+    },
+    "Hall": {
+      "title": "Hall",
+      "description": "University residential hall participating in food surplus redistribution",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "hallName": { "type": "string", "maxLength": 120 },
+        "institution": { "type": "string", "maxLength": 100 },
+        "location": { "type": "string", "maxLength": 150 },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "adminId": { "type": "string" },
+        "provostName": { "type": "string", "maxLength": 100 },
+        "totalStudents": { "type": "number" },
+        "surplusHoldingWindowHours": { "type": "number" },
+        "isActive": { "type": "boolean" }
+      },
+      "required": ["hallName", "institution", "location", "adminId"]
+    },
+    "Farm": {
+      "title": "Farm",
+      "description": "Registered local livestock farm collecting surplus food",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "farmName": { "type": "string", "maxLength": 120 },
+        "ownerId": { "type": "string" },
+        "ownerName": { "type": "string", "maxLength": 100 },
+        "location": { "type": "string", "maxLength": 150 },
+        "lat": { "type": "number" },
+        "lng": { "type": "number" },
+        "willingDistanceKm": { "type": "number" },
+        "preferredReturn": { "type": "string", "enum": ["cash", "milk", "eggs", "meat"] },
+        "status": { "type": "string", "enum": ["pending", "approved", "suspended"] }
+      },
+      "required": ["farmName", "ownerId", "ownerName", "location"]
+    },
+    "Animal": {
+      "title": "Animal",
+      "description": "Livestock profile associated with registered farm",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "farmId": { "type": "string" },
+        "species": { "type": "string", "enum": ["cattle", "goat", "sheep", "poultry", "fish"] },
+        "count": { "type": "number" },
+        "details": { "type": "string", "maxLength": 200 },
+        "healthStatus": { "type": "string", "enum": ["healthy", "monitoring", "quarantine"] },
+        "normalFeedUsed": { "type": "string", "maxLength": 150 },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["farmId", "species", "count", "healthStatus"]
+    },
+    "FoodPost": {
+      "title": "FoodPost",
+      "description": "Surplus food offer posted by university hall",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "hallId": { "type": "string" },
+        "hallName": { "type": "string" },
+        "hallAdminId": { "type": "string" },
+        "quantityKg": { "type": "number" },
+        "mealType": { "type": "string", "enum": ["lunch", "dinner", "breakfast"] },
+        "postedTime": { "type": "string" },
+        "maxHoldingHours": { "type": "number" },
+        "pickupDeadline": { "type": "string" },
+        "status": { "type": "string", "enum": ["open", "matched", "collected", "expired", "cancelled"] },
+        "qrSecret": { "type": "string" }
+      },
+      "required": ["hallId", "hallAdminId", "quantityKg", "status"]
+    },
+    "Match": {
+      "title": "Match",
+      "description": "Automated distance and safety match between food post and farm",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "postId": { "type": "string" },
+        "farmId": { "type": "string" },
+        "farmName": { "type": "string" },
+        "farmOwnerId": { "type": "string" },
+        "hallId": { "type": "string" },
+        "matchedTime": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "accepted", "declined", "expired", "reassigned", "collected"] },
+        "distanceKm": { "type": "number" },
+        "safetyScore": { "type": "number" }
+      },
+      "required": ["postId", "farmId", "hallId", "status"]
+    },
+    "Pickup": {
+      "title": "Pickup",
+      "description": "Verified physical collection record via QR verification",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "matchId": { "type": "string" },
+        "postId": { "type": "string" },
+        "farmId": { "type": "string" },
+        "hallId": { "type": "string" },
+        "verifiedAt": { "type": "string" },
+        "actualQuantityKg": { "type": "number" },
+        "verifiedByUserId": { "type": "string" }
+      },
+      "required": ["matchId", "postId", "verifiedAt", "actualQuantityKg"]
+    },
+    "Transaction": {
+      "title": "Transaction",
+      "description": "Circular economy exchange settlement record",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "matchId": { "type": "string" },
+        "postId": { "type": "string" },
+        "hallId": { "type": "string" },
+        "farmId": { "type": "string" },
+        "exchangeType": { "type": "string", "enum": ["cash", "milk", "eggs", "meat"] },
+        "amountQuantity": { "type": "number" },
+        "estimatedValueBdt": { "type": "number" },
+        "settlementStatus": { "type": "string", "enum": ["pending", "settled"] }
+      },
+      "required": ["hallId", "farmId", "exchangeType", "amountQuantity", "settlementStatus"]
+    },
+    "NutritionGuideline": {
+      "title": "NutritionGuideline",
+      "description": "Veterinary feeding standard and safety threshold",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "species": { "type": "string", "enum": ["cattle", "goat", "sheep", "poultry", "fish"] },
+        "maxHoldingTimeHours": { "type": "number" },
+        "sourceExpert": { "type": "string" }
+      },
+      "required": ["species", "maxHoldingTimeHours"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable security and biosecurity audit log entry",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userRole": { "type": "string" },
+        "action": { "type": "string" },
+        "entityType": { "type": "string" },
+        "details": { "type": "string" }
+      },
+      "required": ["timestamp", "action", "details"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Alert notification sent to farm owners or hall managers",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "recipientUserId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "type": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["recipientUserId", "title", "message", "type", "read"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/User" },
+      "description": "User profile accounts and permissions"
+    },
+    "/halls/{hallId}": {
+      "schema": { "$ref": "#/entities/Hall" },
+      "description": "University residential halls directory"
+    },
+    "/farms/{farmId}": {
+      "schema": { "$ref": "#/entities/Farm" },
+      "description": "Registered livestock farms directory"
+    },
+    "/animals/{animalId}": {
+      "schema": { "$ref": "#/entities/Animal" },
+      "description": "Livestock profile records"
+    },
+    "/food_posts/{postId}": {
+      "schema": { "$ref": "#/entities/FoodPost" },
+      "description": "Surplus food offers created by dining halls"
+    },
+    "/matches/{matchId}": {
+      "schema": { "$ref": "#/entities/Match" },
+      "description": "Food post to farm matches"
+    },
+    "/pickups/{pickupId}": {
+      "schema": { "$ref": "#/entities/Pickup" },
+      "description": "QR verified collection logs"
+    },
+    "/transactions/{transactionId}": {
+      "schema": { "$ref": "#/entities/Transaction" },
+      "description": "Exchange return transactions"
+    },
+    "/nutrition_guidelines/{guidelineId}": {
+      "schema": { "$ref": "#/entities/NutritionGuideline" },
+      "description": "Veterinary nutrition and holding time guidelines"
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/Notification" },
+      "description": "User notification alerts and messages"
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "#/entities/AuditLog" },
+      "description": "Immutable security and activity audit records"
+    }
+  }
+}

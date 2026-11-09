@@ -1,0 +1,113 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions for Role-Based Access Control
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() && getUserData().role == 'super_admin';
+    }
+
+    function isHallAdmin() {
+      return isAuthenticated() && getUserData().role == 'hall_admin';
+    }
+
+    function isFarmOwner() {
+      return isAuthenticated() && getUserData().role == 'farm_owner';
+    }
+
+    function isApproved() {
+      return isAuthenticated() && getUserData().approvalStatus == 'approved';
+    }
+
+    // Users Collection
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isSuperAdmin() || (request.auth.uid == userId && !('role' in request.resource.data && request.resource.data.role != resource.data.role));
+      allow delete: if isSuperAdmin();
+    }
+
+    // Halls Collection
+    match /halls/{hallId} {
+      allow read: if isAuthenticated();
+      allow create: if isSuperAdmin() || (isHallAdmin() && request.resource.data.adminId == request.auth.uid);
+      allow update: if isSuperAdmin() || (isHallAdmin() && resource.data.adminId == request.auth.uid);
+      allow delete: if isSuperAdmin();
+    }
+
+    // Farms Collection
+    match /farms/{farmId} {
+      allow read: if isAuthenticated();
+      allow create: if isSuperAdmin() || (isFarmOwner() && request.resource.data.ownerId == request.auth.uid);
+      allow update: if isSuperAdmin() || (isFarmOwner() && resource.data.ownerId == request.auth.uid);
+      allow delete: if isSuperAdmin();
+    }
+
+    // Animals Collection (Livestock profiles)
+    match /animals/{animalId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isSuperAdmin() || isFarmOwner();
+    }
+
+    // Food Surplus Posts
+    match /food_posts/{postId} {
+      allow read: if isAuthenticated();
+      allow create: if isHallAdmin() && isApproved();
+      allow update: if isSuperAdmin() || (isHallAdmin() && resource.data.hallAdminId == request.auth.uid) || isFarmOwner();
+      allow delete: if isSuperAdmin() || (isHallAdmin() && resource.data.hallAdminId == request.auth.uid);
+    }
+
+    // Matches
+    match /matches/{matchId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isSuperAdmin();
+    }
+
+    // Pickups (QR verified)
+    match /pickups/{pickupId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isSuperAdmin();
+    }
+
+    // Transactions (Reward settlements: cash, milk, eggs, meat)
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated();
+      allow delete: if isSuperAdmin();
+    }
+
+    // Nutrition Guidelines
+    match /nutrition_guidelines/{guidelineId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin();
+    }
+
+    // Notifications
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && (resource.data.recipientUserId == request.auth.uid || resource.data.userId == request.auth.uid || isSuperAdmin());
+      allow create: if isAuthenticated();
+      allow update: if isAuthenticated() && (resource.data.recipientUserId == request.auth.uid || resource.data.userId == request.auth.uid);
+      allow delete: if isAuthenticated() && (resource.data.recipientUserId == request.auth.uid || resource.data.userId == request.auth.uid);
+    }
+
+    // Audit Logs
+    match /audit_logs/{logId} {
+      allow read: if isSuperAdmin();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Append-only immutable log
+    }
+  }
+}

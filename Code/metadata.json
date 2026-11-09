@@ -1,0 +1,11 @@
+{
+  "name": "Remix FarmLink",
+  "description": "A secure platform connecting university halls with local livestock farms to redistribute surplus food efficiently and safely.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
